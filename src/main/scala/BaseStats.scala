@@ -37,26 +37,25 @@ class Extrema {
 
 
 // Welford's online algorithm: https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
-class Variance(wf: WeightFunction){
+class Variance(weightingFunction: Int => Double){
 
   var count = 0
   var mean = Double.NaN
   var M2 = Double.NaN
-  val weight = wf
 
   def this(){
-    this(new EqualWeight())
+    this(x => 1.0/ x.toDouble)
   }
 
   def fit(x: Double): Unit ={
     count += 1
-    val reductionFactor = weight.getWeight()
+    val reductionFactor = weightingFunction(count)
     if (count==1) {
       mean = x
       M2 = 0.0
       return
     }
-//    val reductionFactor = weight.getWeight()
+
     val delta = x - mean
     val newmean = mean*(1.0-reductionFactor) + reductionFactor*x
     val delta2 = x - newmean
@@ -76,14 +75,13 @@ class Variance(wf: WeightFunction){
 }
 
 
-class Mean(wf: WeightFunction) {
+class Mean(weightingFunction: Int => Double) {
 
   var count = 0
   var mean = Double.NaN
-  val weight = wf
 
   def this(){
-    this(new EqualWeight())
+    this(x => 1.0/ x.toDouble)
   }
 
   def value(): Double ={
@@ -99,7 +97,7 @@ class Mean(wf: WeightFunction) {
   def fit(x: Double): Unit ={
     if (x.isNaN) return
     count += 1
-    val reductionFactor = weight.getWeight()
+    val reductionFactor = weightingFunction(count)
     if (count == 1) {
       mean = x
     } else {
@@ -113,21 +111,20 @@ class Mean(wf: WeightFunction) {
 }
 
 
-class CovMatrix(nFeatures: Int, wf: WeightFunction){
+class CovMatrix(nFeatures: Int, weightingFunction: Int => Double){
 
 //  var value = DenseMatrix.zeros[Double](nFeatures,nFeatures)
   var A = DenseMatrix.zeros[Double](nFeatures,nFeatures)
   var b = DenseVector.zeros[Double](nFeatures)
-  var weight = wf
   var count = 0
 
   def this(p: Int){
-    this(p, new EqualWeight())
+    this(p, x => 1.0/ x.toDouble)
   }
 
   def fit(x: DenseVector[Double]): Unit ={
     count += 1
-    val reductionFactor = weight.getWeight()
+    val reductionFactor = weightingFunction(count)
     // smooth!(b, x, gamma)
     for (i <- 0 until b.length){
       b(i) = b(i)*(1-reductionFactor) + reductionFactor*x(i)
@@ -160,3 +157,12 @@ class CovMatrix(nFeatures: Int, wf: WeightFunction){
 
 
 }
+
+
+/*
+  TODO:
+  - change weightingFunction signature to Any => Double to handle timestamps and datatimes
+  - add latestTimestamp to basestats class attributes
+  - in the fit method use match case to use count or lastTimestamp for the weighting
+
+ */

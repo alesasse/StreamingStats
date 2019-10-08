@@ -29,7 +29,7 @@ class Perceptron(val learningRate: Double, val nfeatures: Int) {
   }
 
   def loss(X: DenseVector[Double], y: Double) ={
-    y - predict(X)
+    (y - predict(X))*(y - predict(X))
   }
 
   def coefficients() = {
